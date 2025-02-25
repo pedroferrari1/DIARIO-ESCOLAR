@@ -9,7 +9,6 @@ Sistema de gerenciamento escolar desenvolvido com React, TypeScript e Supabase.
 - Tailwind CSS
 - Supabase
 - Vite
-- Vitest
 - React Router DOM
 - Zustand
 - React Hook Form
@@ -44,36 +43,48 @@ Edite o arquivo `.env` com suas credenciais do Supabase.
 npm run dev
 ```
 
-## ⚙️ Scripts Disponíveis
+## 🔒 Configuração do Supabase
 
-- `npm run dev`: Inicia o servidor de desenvolvimento
-- `npm run build`: Gera a build de produção
-- `npm run preview`: Visualiza a build localmente
-- `npm run test`: Executa os testes
-- `npm run test:coverage`: Executa os testes com cobertura
-- `npm run test:ui`: Executa os testes com interface visual
+1. Crie uma conta no [Supabase](https://supabase.com)
+2. Crie um novo projeto
+3. Vá para Project Settings > API
+4. Copie a URL do projeto e a anon key
+5. Configure as variáveis de ambiente:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
 
-## 🗄️ Estrutura do Projeto
+## 🚀 Deploy no Netlify
 
-```
-src/
-  ├── components/     # Componentes React reutilizáveis
-  ├── hooks/         # Custom hooks
-  ├── lib/           # Configurações de bibliotecas
-  ├── pages/         # Páginas da aplicação
-  ├── services/      # Serviços e APIs
-  ├── store/         # Gerenciamento de estado global
-  ├── test/          # Configurações e utilitários de teste
-  └── types/         # Definições de tipos TypeScript
-```
+1. Conecte seu repositório ao Netlify
+2. Configure as variáveis de ambiente no Netlify:
+   - Vá para Site Settings > Environment Variables
+   - Adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
+3. Configure as políticas de segurança no Supabase:
+   - Habilite Row Level Security (RLS)
+   - Configure as políticas de acesso apropriadas
+   - Verifique as configurações de CORS
 
-## 🚀 Deploy
+### Configurações de Segurança Importantes
 
-O projeto está configurado para deploy automático no Netlify:
+1. **Row Level Security (RLS)**
+   - Todas as tabelas devem ter RLS habilitado
+   - Configure políticas específicas para cada tabela
+   - Teste as políticas em ambiente de desenvolvimento
 
-1. Commits na branch `main` são automaticamente deployados em produção
-2. Pull requests geram deploys de preview
-3. Branches de feature podem ser deployadas para ambientes de teste
+2. **CORS Settings no Supabase**
+   - Adicione o domínio do Netlify aos allowed origins
+   - Use `*` apenas em desenvolvimento
+   - Em produção, especifique os domínios exatos
+
+3. **Variáveis de Ambiente**
+   - Nunca comite o arquivo `.env`
+   - Use diferentes variáveis para desenvolvimento e produção
+   - Mantenha as chaves de API seguras
+
+4. **Headers de Segurança**
+   - Configurados no `netlify.toml`
+   - Incluem proteções contra XSS, clickjacking, etc.
+   - Content Security Policy (CSP) configurada
 
 ## 📝 Licença
 
