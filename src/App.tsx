@@ -7,6 +7,7 @@ import UsersManagement from './pages/admin/UsersManagement';
 import SystemSettings from './pages/admin/SystemSettings';
 import SchoolDashboard from './pages/SchoolDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
+import AttendanceDashboard from './pages/admin/AttendanceDashboard';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
@@ -57,6 +58,16 @@ function App() {
             <PrivateRoute>
               <AdminRoute>
                 <SystemSettings />
+              </AdminRoute>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/attendance"
+          element={
+            <PrivateRoute>
+              <AdminRoute>
+                <AttendanceDashboard />
               </AdminRoute>
             </PrivateRoute>
           }

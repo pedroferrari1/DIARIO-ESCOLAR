@@ -1,8 +1,11 @@
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
 export type UserRole = 'admin' | 'school' | 'teacher';
 export type ObservationCategory = 'performance' | 'behavior' | 'other';
 export type ActivityType = 'create' | 'update' | 'delete' | 'login' | 'logout';
+export type NotificationType = 'info' | 'warning' | 'error' | 'success';
 
-export interface User {
+export interface User extends SupabaseUser {
   id: string;
   full_name: string;
   email: string;
@@ -12,6 +15,8 @@ export interface User {
   last_login: string | null;
   created_at: string;
   updated_at: string;
+  two_factor_enabled: boolean;
+  two_factor_secret?: string;
 }
 
 export interface UserActivity {
@@ -20,6 +25,17 @@ export interface UserActivity {
   activity_type: ActivityType;
   description: string;
   ip_address: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
   created_at: string;
 }
 

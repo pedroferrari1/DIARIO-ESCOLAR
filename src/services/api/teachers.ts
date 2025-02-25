@@ -1,6 +1,15 @@
 import { supabase } from '../../lib/supabase';
 import { Teacher } from '../../types/database';
 
+interface CreateTeacherData {
+  full_name: string;
+  email: string;
+  password: string;
+  school_id: string;
+  role: 'teacher';
+  active: boolean;
+}
+
 export const teachersApi = {
   async getAll() {
     const { data, error } = await supabase
@@ -19,42 +28,60 @@ export const teachersApi = {
     })[];
   },
 
-  async getById(id: string) {
-    const { data, error } = await supabase
-      .from('teachers')
-      .select(`
-        *,
-        user:users(id, full_name, email),
-        school:schools(id, name)
-      `)
-      .eq('id', id)
-      .single();
+  async create(teacherData: CreateTeacherData) {
+    // Primeiro, criar o usuário no Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: teacherData.email,
+      password: teacherData.password,
+      options: {
+        data: {
+          full_name: teacherData.full_name,
+          role: teacherData.role,
+        },
+      },
+    });
 
-    if (error) throw error;
-    return data as Teacher;
-  },
+    if (authError) throw authError;
+    if (!authData.user) throw new Error('Erro ao criar usuário');
 
-  async create(teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase
-      .from('teachers')
-      .insert(teacher)
-      .select()
-      .single();
+    try {
+      // Criar o registro na tabela users
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          full_name: teacherData.full_name,
+          email: teacherData.email,
+          role: teacherData.role,
+          active: teacherData.active,
+        });
 
-    if (error) throw error;
-    return data as Teacher;
-  },
+      if (userError) throw userError;
 
-  async update(id: string, teacher: Partial<Teacher>) {
-    const { data, error } = await supabase
-      .from('teachers')
-      .update(teacher)
-      .eq('id', id)
-      .select()
-      .single();
+      // Criar o registro na tabela teachers
+      const { data: teacherRecord, error: teacherError } = await supabase
+        .from('teachers')
+        .insert({
+          user_id: authData.user.id,
+          school_id: teacherData.school_id,
+        })
+        .select(`
+          *,
+          user:users(id, full_name, email),
+          school:schools(id, name)
+        `)
+        .single();
 
-    if (error) throw error;
-    return data as Teacher;
+      if (teacherError) throw teacherError;
+      return teacherRecord as Teacher;
+
+    } catch (error) {
+      // Se algo der errado, tentar limpar os dados criados
+      if (authData.user) {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      }
+      throw error;
+    }
   },
 
   async delete(id: string) {

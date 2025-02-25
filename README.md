@@ -1,5 +1,3 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/e934de63-7ef5-453c-81ca-7758dcc14646/deploy-status)](https://app.netlify.com/sites/diarioescolar/deploys)
-
 # Diário Escolar Digital
 
 Sistema de gerenciamento escolar desenvolvido com React, TypeScript e Supabase.

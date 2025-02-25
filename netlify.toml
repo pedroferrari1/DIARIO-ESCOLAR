@@ -5,21 +5,32 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_ENV = "production"
 
-# Configurações de produção
+# Production settings
 [context.production]
   environment = { NODE_ENV = "production" }
 
-# Configurações de preview para branches
+# Branch deploy settings
 [context.branch-deploy]
   environment = { NODE_ENV = "development" }
 
-# Configurações para deploy de pull requests
+# Deploy preview settings
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
 
-# Redirecionamentos e rewrite rules para SPA
+# SPA redirect rules
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
