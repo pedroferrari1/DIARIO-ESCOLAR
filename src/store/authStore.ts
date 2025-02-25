@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { AuthError } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
@@ -9,6 +10,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -16,6 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: false,
   error: null,
   setUser: (user) => set({ user }),
+  clearError: () => set({ error: null }),
   signIn: async (email, password) => {
     set({ loading: true, error: null });
     try {
@@ -24,24 +27,60 @@ export const useAuthStore = create<AuthState>((set) => ({
         password,
       });
       
-      if (authError) throw authError;
+      if (authError) {
+        // Handle specific auth errors
+        if (authError instanceof AuthError) {
+          switch (authError.status) {
+            case 400:
+              throw new Error('Credenciais inválidas. Verifique seu e-mail e senha.');
+            case 422:
+              throw new Error('Formato de e-mail inválido.');
+            case 429:
+              throw new Error('Muitas tentativas. Tente novamente mais tarde.');
+            case 0:
+              throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
+            default:
+              throw new Error('Erro de autenticação. Tente novamente.');
+          }
+        }
+        throw authError;
+      }
 
-      if (authData.user) {
-        // Buscar dados do usuário na tabela users
-        const { data: userData, error: userError } = await supabase
+      if (!authData.user) {
+        throw new Error('Erro ao obter dados do usuário.');
+      }
+
+      // Fetch user data from users table with retry logic
+      let retries = 3;
+      let userData = null;
+      let userError = null;
+
+      while (retries > 0 && !userData) {
+        const result = await supabase
           .from('users')
           .select('*')
           .eq('id', authData.user.id)
-          .single();
+          .maybeSingle();
 
-        if (userError) throw userError;
-        
-        set({ user: userData as User });
+        if (!result.error && result.data) {
+          userData = result.data;
+          break;
+        }
+
+        userError = result.error;
+        retries--;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
       }
+
+      if (!userData) {
+        throw new Error(userError ? 'Erro ao carregar dados do usuário.' : 'Usuário não encontrado.');
+      }
+      
+      set({ user: userData as User });
     } catch (error) {
       console.error('Erro de login:', error);
       set({ 
-        error: 'Credenciais inválidas. Verifique seu e-mail e senha.',
+        error: error instanceof Error ? error.message : 'Erro ao fazer login. Tente novamente.',
         user: null 
       });
     } finally {
@@ -55,7 +94,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (error) throw error;
       set({ user: null });
     } catch (error) {
-      set({ error: 'Erro ao sair. Tente novamente.' });
+      console.error('Erro ao sair:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Erro ao sair. Tente novamente.' 
+      });
     } finally {
       set({ loading: false });
     }
